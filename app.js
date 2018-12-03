@@ -146,7 +146,32 @@ var UIController = (function(){
         expenseLabel: '.budget__expenses--value',
         percentageLabel: '.budget__expenses--percentage',
         container: '.container',
-        expPercentageLabel: '.item__percentage'
+        expPercentageLabel: '.item__percentage',
+        dateLabel: '.budget__title--month'
+    };
+
+    var formatNumber = function(num, type){
+        var decimal, numSplit, int;
+        /*
+            + or - brfore the number
+            exactly 2 decimal points 
+            comma separation the thousand
+
+            2340.344 --> + 2,340.34
+        */
+        num = Math.abs(num);
+        num = num.toFixed(2);
+
+        numSplit = num.split('.');
+        int = numSplit[0];
+        if(int.length > 3){
+            int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, 3);
+        }
+
+        decimal = numSplit[1];
+        
+
+        return (type === 'expense' ? '-' : '+') + ' ' + int +'.'+ decimal;
     };
     
     return{
@@ -163,16 +188,16 @@ var UIController = (function(){
             //Create HTML string with placeholder text
             if(type === 'income'){
                 element = DOMstring.incomeContainer;
-                html = '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">+%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             }else if(type === 'expense'){
                 element = DOMstring.expenseContainer;
-                html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">-%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+                html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             }
             
             //Replace the placeholder text with actual data
             newHtml = html.replace('%id%', obj.id);
             newHtml = newHtml.replace('%description%', obj.description);
-            newHtml = newHtml.replace('%value%', obj.value);
+            newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
             
             //Insert the HTML to the DOM
             document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
@@ -193,7 +218,7 @@ var UIController = (function(){
             
             fieldsArr = Array.prototype.slice.call(fields);
             
-            fieldsArr.forEach(function(current, index, array){
+            fieldsArr.forEach(function(current){
                 current.value = "";
             });
             
@@ -201,10 +226,11 @@ var UIController = (function(){
         },
         
         displayBudget: function(obj){
-          
-            document.querySelector(DOMstring.budgetLabel).textContent = obj.budget; 
-            document.querySelector(DOMstring.incomeLabel).textContent = obj.totalInc; 
-            document.querySelector(DOMstring.expenseLabel).textContent = obj.totalExp; 
+            var type;
+            obj.budget > 0 ? type = 'income' : type = 'expense';
+            document.querySelector(DOMstring.budgetLabel).textContent = formatNumber(obj.budget, type); 
+            document.querySelector(DOMstring.incomeLabel).textContent = formatNumber(obj.totalInc, 'income'); 
+            document.querySelector(DOMstring.expenseLabel).textContent = formatNumber(obj.totalExp, 'expense'); 
             
             if(obj.percentage > 0){
                 document.querySelector(DOMstring.percentageLabel).textContent = obj.percentage + '%';
@@ -232,9 +258,16 @@ var UIController = (function(){
                     cur.textContent = '--';
                 }
             });
+        },
 
-
-
+        displayMonth: function(){
+            var now, year, month;
+            now = new Date();
+            months = ['January', 'February', 'March', 'April', 'May', 'June','July','August','September','October', 'November','December'];
+            month = now.getMonth();
+            year = now.getFullYear(); 
+            document.querySelector(DOMstring.dateLabel).textContent = months[month] + ' ' + year;
+            
         },
         
         getDOMstring: function(){
@@ -336,6 +369,7 @@ var controller = (function(budgetCtrl, UICtrl){
    return{
        init: function(){
            console.log('App is started');
+           UICtrl.displayMonth();
            UICtrl.displayBudget({
                budget: 0,
               totalInc: 0,
